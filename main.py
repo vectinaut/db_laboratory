@@ -29,28 +29,33 @@ try:
     )
     connection.autocommit = True
     # table_names = get_names.get_names_tabels(connection)
-    table_names = ['user',
-                   'payments',
-                   'orders',
-                   'profession',
-                   'course',
-                   'prof_to_course',
-                   'order_details',
-                   'review',
-                   'module',
-                   'curator',
-                   'curator_to_module',
-                   'speaker',
-                   'speaker_to_module',
-                   'video',
-                   'test',
-                   'practice',
-                   'progress']
+    table_names = {'user': 400,
+                   'payments': 500,
+                   'orders': 500,
+                   'profession': 55,
+                   'course': 120,
+                   'prof_to_course': 300,
+                   'order_details': 500,
+                   'review': 400,
+                   'module': 700,
+                   'curator': 120,
+                   'curator_to_module': 200,
+                   'speaker': 70,
+                   'speaker_to_module': 700,
+                   'video': 2000,
+                   'test': 300,
+                   'practice': 500,
+                   'progress': 1000}
     # print(table_names)
 
     all_ids_columns = []
 
-    for table_name in table_names:
+    for table_name in table_names.keys():
+        with connection.cursor() as cursor:
+            query = f"""TRUNCATE public.{table_name} CASCADE;"""
+            cursor.execute(
+                query
+            )
         columns = get_names.get_columns_names(connection, table_name)
         ids_columns = [name for name in columns if ('_id' in name and name not in all_ids_columns)]
 
@@ -58,13 +63,15 @@ try:
     # print(all_ids_columns)
     ids_dict = {id_name: (i + 1) * 10000 for i, id_name in enumerate(all_ids_columns)}
 
-    for table_count, table_name in enumerate(table_names):
+    pk_names_per_table = {get_pk_names(connection, table_name): table_name for table_name in table_names.keys()}
+
+    for table_count, table_name in enumerate(table_names.keys()):
         logging.info(f'{table_name}: -----------{table_count + 1}/{len(table_names)}-----------')
         columns = get_names.get_columns_names(connection, table_name)
         pk_name = get_pk_names(connection, table_name)
         fk_names = get_fk_names(connection, table_name)
         # print(f"PK name: {pk_name}")
-        for pk in range(1, 401):
+        for pk in range(1, table_names[table_name]+1):
 
             row = []
             gender = random.choice([0, 1])
@@ -75,7 +82,7 @@ try:
                     if column == pk_name:
                         row.append(ids_dict[column] + pk)
                     else:
-                        row.append(ids_dict[column] + random.randint(1, 400))
+                        row.append(ids_dict[column] + random.randint(1, table_names[pk_names_per_table[column]]))
 
                 elif 'name' in column:
                     name = get_name(column, gender)
